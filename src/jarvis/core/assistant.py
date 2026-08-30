@@ -35,13 +35,29 @@ class JarvisAssistant:
         except queue.Empty:
             return None
 
+    def _get_input_device(self):
+        devices = sd.query_devices()
+
+        # Prefer the built-in MacBook microphone.
+        # AirPods can then connect/disconnect without killing Jarvis input.
+        for i, device in enumerate(devices):
+            if (
+                "MacBook Air Microphone" in device["name"]
+                and device["max_input_channels"] > 0
+            ):
+                print(f"🎤 Input device: {device['name']}")
+                return i
+
+        print("🎤 MacBook microphone not found. Using system default input.")
+        return None
+
     def run(self):
         with sd.InputStream(
             samplerate=self.settings.SAMPLE_RATE,
             channels=1,
             blocksize=self.settings.CHUNK_SIZE,
             dtype="int16",
-            device=self.settings.DEVICE_ID,
+            device=self._get_input_device(),
             callback=self.audio_callback
         ):
             while True:

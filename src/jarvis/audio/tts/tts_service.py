@@ -1,8 +1,8 @@
-# src/jarvis/audio/tts/tts_service.py
-import io
+import os
+import subprocess
+import tempfile
 import wave
-import numpy as np
-import sounddevice as sd
+
 from piper import PiperVoice
 
 
@@ -11,15 +11,26 @@ class TTSService:
         self.voice = PiperVoice.load(model_path)
 
     def speak(self, text):
-        audio_stream = io.BytesIO()
-        with wave.open(audio_stream, "wb") as wav_file:
-            self.voice.synthesize_wav(text, wav_file)
+        temp_path = None
 
-        audio_stream.seek(0)
-        with wave.open(audio_stream, "rb") as wav_file:
-            audio_data = wav_file.readframes(wav_file.getnframes())
-            audio_np = np.frombuffer(audio_data, dtype=np.int16)
-            sample_rate = wav_file.getframerate()
+        try:
+            # Create a temporary WAV file
+            with tempfile.NamedTemporaryFile(
+                suffix=".wav",
+                delete=False
+            ) as temp_file:
+                temp_path = temp_file.name
 
-        sd.play(audio_np, samplerate=sample_rate)
-        sd.wait()
+            # Let Piper write the synthesized speech directly to WAV
+            with wave.open(temp_path, "wb") as wav_file:
+                self.voice.synthesize_wav(text, wav_file)
+
+            # afplay follows the CURRENT macOS output device
+            subprocess.run(
+                ["afplay", temp_path],
+                check=True
+            )
+
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.remove(temp_path)
