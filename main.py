@@ -6,10 +6,11 @@ from src.jarvis.audio.tts.tts_service import TTSService
 from src.jarvis.llm.ollama_client import OllamaClient
 from src.jarvis.core.assistant import JarvisAssistant
 
+
+
 wakeword = WakewordService(settings.WAKEWORD_MODEL_PATH)
 stt = STTService("small", "cpu", "int8")
 tts = TTSService(settings.PIPER_MODEL_PATH)
 llm = OllamaClient(settings.OLLAMA_MODEL)
-
 assistant = JarvisAssistant(wakeword, stt, tts, llm, settings)
-assistant.run()
+assistant.run()   
